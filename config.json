@@ -1,0 +1,13 @@
+{
+  "provider": "yahoo",
+  "interval_minutes": 5,
+  "history_bars": 450,
+  "symbols": [
+    {"name": "XAU/USD", "yahoo": "GC=F",     "twelvedata": "XAU/USD", "oanda": "XAU_USD",    "mintick": 0.01},
+    {"name": "US100",   "yahoo": "NQ=F",     "twelvedata": "QQQ",     "oanda": "NAS100_USD", "mintick": 0.1},
+    {"name": "US30",    "yahoo": "YM=F",     "twelvedata": "DIA",     "oanda": "US30_USD",   "mintick": 1.0},
+    {"name": "EUR/USD", "yahoo": "EURUSD=X", "twelvedata": "EUR/USD", "oanda": "EUR_USD",    "mintick": 0.00001},
+    {"name": "WTI",     "yahoo": "CL=F",     "twelvedata": "WTI/USD", "oanda": "WTICO_USD",  "mintick": 0.01}
+  ],
+  "params": {}
+}

@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EAconnect · Auction Signal Scanner</title>
+<style>
+  :root {
+    --bg: #030508;
+    --card: #0a0f18;
+    --card2: #060910;
+    --line: rgba(148, 163, 184, 0.16);
+    --tx: #e2e8f0;
+    --mut: #94a3b8;
+    --buy: #10b981;
+    --sell: #f43f5e;
+    --warn: #fbbf24;
+    --accent: #38bdf8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image: radial-gradient(ellipse 80% 45% at 50% -10%, rgba(16, 185, 129, 0.08), transparent 65%);
+    color: var(--tx);
+    font: 14px/1.45 Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 14px; }
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 14px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .logo {
+    width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center;
+    background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(16, 185, 129, 0.45);
+    color: var(--buy); font-weight: 800; font-family: ui-monospace, monospace; font-size: 13px;
+  }
+  h1 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+  .sub { color: var(--mut); font-size: 11px; font-family: ui-monospace, monospace; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button, input {
+    background: var(--card); color: var(--tx); border: 1px solid var(--line);
+    padding: 7px 11px; border-radius: 8px; font-size: 12px; font-family: inherit;
+  }
+  button { cursor: pointer; font-weight: 600; }
+  button.primary { background: var(--buy); color: #030508; border-color: var(--buy); font-weight: 700; }
+  .pill {
+    font-size: 11px; font-family: ui-monospace, monospace; padding: 3px 9px;
+    border-radius: 999px; border: 1px solid var(--line); color: var(--mut);
+  }
+  .pill.on { color: var(--buy); border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.1); }
+  .pill.err { color: var(--sell); border-color: rgba(244, 63, 94, 0.5); background: rgba(244, 63, 94, 0.1); }
+  .banner {
+    background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.45);
+    color: var(--warn); padding: 9px 12px; border-radius: 10px; margin-bottom: 12px; font-size: 12px;
+  }
+  .layout { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .card {
+    background: linear-gradient(180deg, rgba(10, 15, 24, 0.92), rgba(5, 8, 14, 0.98));
+    border: 1px solid var(--line); border-radius: 12px; padding: 14px;
+  }
+  .card h2 { margin: 0 0 10px; font-size: 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 8px; }
+  .mkt {
+    background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 10px;
+  }
+  .mkt-top { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+  .kv { display: flex; justify-content: space-between; font-size: 12px; color: var(--mut); font-family: ui-monospace, monospace; margin-top: 2px; }
+  .kv b { color: var(--tx); font-weight: 600; }
+  .sig {
+    background: var(--card2); border: 1px solid var(--line); border-left: 4px solid var(--mut);
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer;
+  }
+  .sig.long { border-left-color: var(--buy); }
+  .sig.short { border-left-color: var(--sell); }
+  .sig-head { display: flex; justify-content: space-between; font-weight: 700; font-size: 13px; }
+  .long .sig-side { color: var(--buy); }
+  .short .sig-side { color: var(--sell); }
+  .lv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 6px; font-size: 12px; font-family: ui-monospace, monospace; }
+  .lv span { display: block; color: var(--mut); font-size: 10px; }
+  .ticket-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px; border-radius: 8px; background: var(--card2);
+    border: 1px solid var(--line); margin-bottom: 7px; font-family: ui-monospace, monospace; font-size: 12px;
+  }
+  .ticket-row.sl { border-color: rgba(244, 63, 94, 0.35); background: rgba(244, 63, 94, 0.08); }
+  .ticket-row.tp { border-color: rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.08); }
+  .copy-btn { padding: 3px 8px; font-size: 11px; background: #1e293b; border-color: #334155; }
+  .risk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .risk-grid label { display: block; font-size: 11px; color: var(--mut); margin-bottom: 4px; }
+  .risk-grid input { width: 100%; font-family: ui-monospace, monospace; }
+  .empty { color: var(--mut); font-size: 13px; padding: 10px 0; }
+  footer { color: var(--mut); font-size: 11px; margin-top: 16px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">EA</div>
+      <div>
+        <h1>EAconnect · Auction Signal Scanner</h1>
+        <div class="sub" id="meta">connecting to backend...</div>
+      </div>
+    </div>
+    <div class="controls">
+      <span class="pill" id="eastate">EA: never connected</span>
+      <span class="pill" id="alertstate">alerts off</span>
+      <button id="enable" class="primary" type="button">Enable Audio Alerts</button>
+      <button id="btnToken" type="button">Set Access Token</button>
+    </div>
+  </header>
+
+  <div id="banner"></div>
+
+  <div class="layout">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card">
+        <h2><span>Live Markets</span><span class="sub" id="providerLabel">--</span></h2>
+        <div class="grid" id="markets"></div>
+      </div>
+
+      <div class="card">
+        <h2><span>Signals Feed</span><span class="sub">Tap any signal to load into Exness ticket</span></h2>
+        <div id="signals"><div class="empty">No signals yet.</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2><span>Manual Exness Phone Ticket</span><span class="pill" id="ticketGrade">WAIT</span></h2>
+        <div class="risk-grid">
+          <div>
+            <label for="balZar">Balance (ZAR)</label>
+            <input id="balZar" type="number" min="50" step="50" value="500" />
+          </div>
+          <div>
+            <label for="riskPct">Risk %</label>
+            <input id="riskPct" type="number" min="0.5" max="20" step="0.5" value="2" />
+          </div>
+        </div>
+        <div class="kv" style="margin-bottom:10px;">
+          <span>Max Risk: <b id="riskZarOut">R10.00</b></span>
+          <span>Suggested Lots: <b id="lotsOut">0.01</b></span>
+        </div>
+
+        <div class="ticket-row"><span>Symbol / Side</span><b id="tSide">WAIT</b></div>
+        <div class="ticket-row"><span>Entry Price</span><div style="display:flex;gap:8px;align-items:center;"><b id="tEntry">--</b><button class="copy-btn" data-copy="tEntry" type="button">Copy</button></div></div>
+        <div class="ticket-row sl"><span>Stop Loss (SL)</span><div style="display:flex;gap:8px;align-items:center;"><b id="tSL">--</b><button class="copy-btn" data-copy="tSL" type="button">Copy</button></div></div>
+        <div class="ticket-row tp"><span>TP1 (BE Lock)</span><div style="display:flex;gap:8px;align-items:center;"><b id="tTP1">--</b><button class="copy-btn" data-copy="tTP1" type="button">Copy</button></div></div>
+        <div class="ticket-row tp"><span>TP2 (Target)</span><div style="display:flex;gap:8px;align-items:center;"><b id="tTP2">--</b><button class="copy-btn" data-copy="tTP2" type="button">Copy</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Rule-based signals from your Python Auction Engine + MT5 EA bridge. Always verify spread &amp; news before execution.</footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let token = '';
+try { token = localStorage.getItem('tok') || ''; } catch (e) {}
+let lastId = null;
+let alertsOn = false;
+let selectedSig = null;
+
+function fp(x) {
+  if (x === null || x === undefined || isNaN(x)) return '--';
+  return Math.abs(x) < 20 ? Number(x).toFixed(5) : Number(x).toFixed(2);
+}
+
+function playBeep() {
+  if (!alertsOn) return;
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime + 0.36);
+  } catch (e) {}
+}
+
+function updateRisk() {
+  const bal = Math.max(50, parseFloat($('#balZar').value) || 500);
+  const pct = Math.max(0.5, parseFloat($('#riskPct').value) || 2);
+  const rZar = bal * (pct / 100);
+  $('#riskZarOut').textContent = `R${rZar.toFixed(2)}`;
+  $('#lotsOut').textContent = Math.max(0.01, rZar / 1000).toFixed(2);
+}
+
+function loadTicket(s) {
+  if (!s) return;
+  selectedSig = s;
+  $('#ticketGrade').textContent = `GRADE ${s.grade || 'A'}`;
+  $('#tSide').textContent = `${s.symbol} · ${s.side}`;
+  $('#tEntry').textContent = fp(s.entry);
+  $('#tSL').textContent = fp(s.sl);
+  $('#tTP1').textContent = fp(s.tp1);
+  $('#tTP2').textContent = fp(s.tp2);
+}
+
+async function apiGet(path) {
+  const headers = token ? { 'X-Token': token } : {};
+  const res = await fetch(path, { headers });
+  if (res.status === 401) throw new Error('401 Unauthorized — click Set Access Token');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function refresh() {
+  try {
+    const [st, sigs] = await Promise.all([apiGet('/api/state'), apiGet('/api/signals?limit=40')]);
+    $('#banner').innerHTML = '';
+    $('#meta').textContent = `Last scan: ${st.last_scan || 'pending'} · Interval: ${st.interval_minutes || 5}m`;
+    $('#providerLabel').textContent = (st.provider || 'yahoo').toUpperCase();
+
+    const ea = st.ea || {};
+    const eaPill = $('#eastate');
+    if (ea.at) {
+      eaPill.textContent = `EA: ${ea.dry ? 'DRY-RUN' : 'LIVE'} (${ea.account || 'MT5'})`;
+      eaPill.className = 'pill on';
+    } else {
+      eaPill.textContent = 'EA: waiting poll';
+      eaPill.className = 'pill';
+    }
+
+    const mkts = $('#markets');
+    mkts.innerHTML = '';
+    (st.markets || []).forEach(m => {
+      const d = document.createElement('div');
+      d.className = 'mkt';
+      const errTxt = m.error ? `<div style="color:var(--sell);font-size:11px;margin-top:4px;">${m.error}</div>` : '';
+      d.innerHTML = `
+        <div class="mkt-top"><span>${m.name}</span><span class="pill ${m.error ? 'err' : 'on'}">${m.error ? 'ERR' : 'OK'}</span></div>
+        <div class="kv"><span>Close</span><b>${fp(m.close)}</b></div>
+        <div class="kv"><span>ADX / RVOL</span><b>${m.adx != null ? Number(m.adx).toFixed(1) : '--'} / ${m.rvol != null ? Number(m.rvol).toFixed(2) + 'x' : '--'}</b></div>
+        ${errTxt}
+      `;
+      mkts.appendChild(d);
+    });
+
+    const sigBox = $('#signals');
+    sigBox.innerHTML = '';
+    if (!sigs || sigs.length === 0) {
+      sigBox.innerHTML = '<div class="empty">No signals yet.</div>';
+    } else {
+      if (lastId === null) {
+        lastId = sigs[0].id;
+        if (!selectedSig) loadTicket(sigs[0]);
+      } else if (sigs[0].id > lastId) {
+        lastId = sigs[0].id;
+        loadTicket(sigs[0]);
+        playBeep();
+      }
+      sigs.forEach(s => {
+        const isLong = String(s.side).toUpperCase() === 'BUY' || String(s.side).toUpperCase() === 'LONG';
+        const d = document.createElement('div');
+        d.className = `sig ${isLong ? 'long' : 'short'}`;
+        d.innerHTML = `
+          <div class="sig-head">
+            <span class="sig-side">${s.symbol} · ${s.side} (GRADE ${s.grade || 'A'})</span>
+            <span class="sub">${s.setup || ''}</span>
+          </div>
+          <div class="lv">
+            <div><span>ENTRY</span>${fp(s.entry)}</div>
+            <div><span>SL</span>${fp(s.sl)}</div>
+            <div><span>TP1</span>${fp(s.tp1)}</div>
+            <div><span>TP2</span>${fp(s.tp2)}</div>
+          </div>
+        `;
+        d.addEventListener('click', () => loadTicket(s));
+        sigBox.appendChild(d);
+      });
+    }
+  } catch (e) {
+    $('#banner').innerHTML = `<div class="banner">${e.message}</div>`;
+  }
+}
+
+$('#enable').addEventListener('click', () => {
+  alertsOn = !alertsOn;
+  $('#alertstate').textContent = alertsOn ? 'alerts on' : 'alerts off';
+  $('#alertstate').className = alertsOn ? 'pill on' : 'pill';
+  if (alertsOn) playBeep();
+});
+
+$('#btnToken').addEventListener('click', () => {
+  const val = window.prompt('Enter ACCESS_TOKEN (leave blank if none):', token);
+  if (val !== null) {
+    token = val.trim();
+    try { localStorage.setItem('tok', token); } catch (e) {}
+    refresh();
+  }
+});
+
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const txt = document.getElementById(btn.dataset.copy).textContent;
+    if (txt && txt !== '--' && navigator.clipboard) {
+      navigator.clipboard.writeText(txt);
+    }
+  });
+});
+
+$('#balZar').addEventListener('input', updateRisk);
+$('#riskPct').addEventListener('input', updateRisk);
+
+updateRisk();
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

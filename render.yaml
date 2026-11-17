@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: signal-scanner
+    runtime: docker
+    plan: starter          # free plan sleeps after 15 min idle and would miss signals
+    healthCheckPath: /api/health
+    envVars:
+      - key: ACCESS_TOKEN
+        generateValue: true   # find it in the Render dashboard; the site asks for it
+      - key: OANDA_TOKEN
+        sync: false
+      - key: OANDA_ENV
+        value: practice
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: TWELVEDATA_KEY
+        sync: false
